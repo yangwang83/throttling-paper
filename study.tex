@@ -1,0 +1,23 @@
+\section{Study of real-world throttling bugs}
+
+We define a throttling bug as a bug that causes either too many
+or too few requests to enter a server, which causes a temporary
+crash or slowdown of the server. 
+
+Throttling bug may overlap with the following types of bugs and
+we try to make a distinction. 
+
+\begin{itemize}
+
+\item Performance bug.
+
+\item Memory leak.
+
+\item Lock contention.
+
+\end{itemize}
+
+
+
+We studied the bug reports of X applications, including Cassandra, Hadoop Common, HBase, HDFS, MapReduce, YARN, Ignite, Kafka, Storm and Spark.
+We searched keywords including ``throttling'', ``blocking'', ``rate limit'', ``out of memory'', etc.
