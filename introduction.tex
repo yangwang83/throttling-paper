@@ -1,1 +1,43 @@
 \section{Introduction}
+
+A server application can get overloaded when it is given more requests that it can handle,
+resuling in server crash or degraded performance. To prevent server overloading, existing 
+server applications often involve \emph{throttling} mechanisms, which delay or block
+excessive incoming requests based on certain criteria.
+
+While the idea seems straightforward, we observe implementing throttling mechanisms
+properly is non-trivial, and bugs in their implementation can lead to severe consequences.
+In this paper, we study XXX throttling related bugs from Y real-world applications.
+
+\vspace{.05in}
+\noindent
+\textbf{Root cause.} 
+
+\begin{itemize}
+
+\item No throttling. XX bugs are caused by the fact that no throttling mechanisms
+were incorporated. Since the applications studied are all mature open-source projects,
+they all incorporate throttling mechanisms for common requests, and thus such no-throttling
+bugs mostly occur for uncommon requests, such as recovery, decomission. etc.
+
+\item Big request. XX bugs are caused by this problem, which means a single request can
+become too big in certain scenarios, causing problems like out of memory. In these cases, throttling mechanisms
+have no chance to resolve the issue. To solve this type of issues, the developer needs to
+break the big request into multiple smaller ones and apply throttling on smaller requests.
+
+\item Incorrect metric. XX bugs fall into this category. It means the throttling mechanism uses
+one metric as the criteria to determine whether to throttle a request, but it should another. A
+typical example is using number of requests or size of requests as the metric---both can be 
+insufficient in certain scenarios.
+
+\item Misconfiguration.
+
+\item Buggy implementation.
+
+\end{itemize}
+
+\vspace{.05in}
+\noindent
+\textbf{Symptoms.}
+
+
