@@ -1,23 +1,45 @@
 \section{Study of real-world throttling bugs}
 
-We define a throttling bug as a bug that causes either too many
-or too few requests to enter a server, which causes a temporary
-crash or slowdown of the server. 
-
-Throttling bug may overlap with the following types of bugs and
-we try to make a distinction. 
+\vspace{.1in}
+\noindent
+\textbf{Methodology.} We studied the bug reports of X applications, including Cassandra, Hadoop Common, 
+HBase, HDFS, MapReduce, YARN, Ignite, Kafka, Storm and Spark. We searched keywords including ``throttling'', ``overload'',
+``rate limit'', ``out of memory'', etc, in their JIRA issues. We then read these issue reports manually to filter out those
+that are not throttling bugs. We mainly filter out the following types:
 
 \begin{itemize}
 
-\item Performance bug.
+\item Generic performance issue. If an issue can cause overutilization of a certain resource, and the solution is to
+optimize the application code to reduce overall resource consumption, then we consider it a generic performance issue
+and do not include it in this study. If the
+solution does not reduce overall resource comsumption but spreads the resource consumption over a longer period
+of time, we consider it a throttling issue and include it in this study.
 
-\item Memory leak.
+\item Permanent resource leak. We don't consider permanent resource leak, like memory leak, in this study. Throttling
+may delay their effects, but does not fundamentally address this type of issues.
 
-\item Lock contention.
+\item Lock contention. Lock contention can implicitly throttle incoming requests, and thus inefficient locking can cause throttling
+issues. However, since lock contention is well studied, we exclude these issues from our study, except one category that
+shows a similar pattern compared to other throttling bugs.
 
 \end{itemize}
 
+\subsection{Symptoms}
 
+Severity: Urgent, critial, major, normal, minor, blocker
 
-We studied the bug reports of X applications, including Cassandra, Hadoop Common, HBase, HDFS, MapReduce, YARN, Ignite, Kafka, Storm and Spark.
-We searched keywords including ``throttling'', ``blocking'', ``rate limit'', ``out of memory'', etc.
+Impact: Crash, low performance
+
+Over or under utilization
+
+\subsection{Root causes and solutions}
+
+No throttling: Mostly involve internal tasks
+
+Big task: 1) consume a lot of memory 2) hold lock for a long time
+
+Incorrect metric: Size vs number
+
+Buggy implementation: 1) wrong formula 2) should increase count before resource consumption and decrease count after resource is released. Opposite order could lead to problems. 3) whether failed requests should be counted
+
+Misconfiguration
