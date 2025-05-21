@@ -1,9 +1,20 @@
 \section{Study of real-world throttling bugs}
 
+We consider the following generic model for throttling: The throttler maintains one or a few \emph{metrics}
+to determine whether throttling should be applied. The metric can be resource utilization (e.g., CPU utilization, memory consumption, etc) 
+of a certain component or even as simple as a counter. A task entering the system may increase the values
+of these metrics and completing the request may decrease their values. Before a request enters the system,
+the throttler will check metric values and maybe the potential impact of the request, and if allowing the request
+to enter will increase metric values to be above certain thresholds, the throttler will either delay or reject the
+request. Note that in practice, some simplified throttlers do not have all these steps. For example, some throttlers do not
+have metrics and simply add a delay to every request.
+
+In this paper, we study bugs happend in these steps.
+
 \vspace{.1in}
 \noindent
-\textbf{Methodology.} We studied the bug reports of X applications, including Cassandra, Hadoop Common, 
-HBase, HDFS, MapReduce, YARN, Ignite, Kafka, Storm and Spark. We searched keywords including ``throttling'', ``overload'',
+\textbf{Methodology.} We studied the bug reports of 11 applications, including Cassandra, Hadoop Common, 
+HBase, HDFS, MapReduce, ZooKeeper, YARN, Ignite, Kafka, Flink, and Spark. We searched keywords including ``throttling'', ``overload'',
 ``rate limit'', ``out of memory'', etc, in their JIRA issues. We then read these issue reports manually to filter out those
 that are not throttling bugs. We mainly filter out the following types:
 
@@ -11,9 +22,7 @@ that are not throttling bugs. We mainly filter out the following types:
 
 \item Generic performance issue. If an issue can cause overutilization of a certain resource, and the solution is to
 optimize the application code to reduce overall resource consumption, then we consider it a generic performance issue
-and do not include it in this study. If the
-solution does not reduce overall resource comsumption but spreads the resource consumption over a longer period
-of time, we consider it a throttling issue and include it in this study.
+and do not include it in this study, because it does not affect the steps discussed above.
 
 \item Permanent resource leak. We don't consider permanent resource leak, like memory leak, in this study. Throttling
 may delay their effects, but does not fundamentally address this type of issues.
@@ -22,7 +31,14 @@ may delay their effects, but does not fundamentally address this type of issues.
 issues. However, since lock contention is well studied, we exclude these issues from our study, except one category that
 shows a similar pattern compared to other throttling bugs.
 
+\item Load balancing. Throttling is often used together with load balancing (i.e., if a request is throttled, distribute it to
+another server). However, if the solution of an issue improves load balancing but does not touch any of the steps
+mentioned above, we do not include it in our study.
+
 \end{itemize}
+
+After fitlering, we get a total of 94 issues, including 17 from Cassandra, 9 from Hadoop Commons, 8 from HBase, 19 from HDFS, 9 from Ignite, 13 from Kafka, 
+4 from MapReduce, 3 from Spark, 1 from YARN, 2 from ZooKeeper, 9 from Flink
 
 \subsection{Symptoms}
 
@@ -34,12 +50,72 @@ Over or under utilization
 
 \subsection{Root causes and solutions}
 
-No throttling: Mostly involve internal tasks
+We classify the root causes into the following types. Note that some issues have more than
+one root causes, so the sum of the cases below is larger than the total number of issues.
 
-Big task: 1) consume a lot of memory 2) hold lock for a long time
+\vspace{.05in}
+\noindent
+\textbf{Missing throttling (26 issues).} These issues are caused by the fact that throttling
+is completely missing for certain types of requests. Since the applications we studied are mature
+open-source products, they have applied throttling to common requests in common scenarios, and thus
+such missing throttling issues often happen for uncommon requests (e.g., recovery, decommission, etc)
+and/or uncommon scenarios (e.g., a large number of affected nodes/data items, very large storage space on one node, etc).
 
-Incorrect metric: Size vs number
+The solution to these issues is straightforward --- add throttling.
 
-Buggy implementation: 1) wrong formula 2) should increase count before resource consumption and decrease count after resource is released. Opposite order could lead to problems. 3) whether failed requests should be counted
+\vspace{.05in}
+\noindent
+\textbf{Big task (14 issues).} These issues are caused by the fact that a single (uncommon) request
+can cause resource over-utilization and thus there is no appropriate way to throttle it. In 13 of them,
+the corresponding system does not throttle such requests and thus the singe request causes problems. In one
+of them, the corresponding system throttles such a request but then the request can never get completed.
 
-Misconfiguration
+There are two common patterns in this category. First, a task can read a lot of data (e.g., recover a big
+table), causing OOM. Second, a task can hold a global lock for a long time, blocking all other tasks.
+
+The solution to this category is to split the big task into multiple smaller ones. For example, a task can
+read data with an iterator, reading a portion of data at a time. A long task requiring global lock can
+periodically release the lock, allowing other tasks to enter.
+
+\vspace{.05in}
+\noindent
+\textbf{Incorrect metric (13 issues).} These issues are caused by using incorrect metrics during
+throttling. This category is often caused by using an easy-to-compute metric to approximate
+the real metric. For example, to limit the memory consumption of tasks, some systems
+uses the number of tasks as the metric, assuming each task has the same memory
+consumption, but this is problematic when some tasks consumes significantly more resource
+than others.
+
+The solution is to switch to the right metric.
+
+\vspace{.05in}
+\noindent
+\textbf{Misconfiguration (6 issues).} These issues are caused by using a suboptimal default
+threshold. While setting a different value is straightforward, some issues argue a static value
+won't work and thus propose adaptive method to change the threshold values or at least
+provide mechanisms to allow a user to change the value at run time.
+
+\vspace{.05in}
+\noindent
+\textbf{Buggy logic (33 issues).} This category catches other bugs in the throttling logic.
+There are a few common subcategories. First, some issues are caused by incorrect formula
+to update metric or sleep/delay time. For example a few issues use integers to update and
+store metric values, and in certain cases, some intermediate values can go below 1 and thus
+become 0, causing unexpected behavior. 
+
+Second, as mentioned at the beginning of this section,
+the system should increase the metric value \emph{before} a task starts and decrease the metric 
+value \emph{after} the task finishes. Some issues are caused by increasing metric value after
+a task starts. If so, the throttling does not actually prevent resource over-utilization since the
+resource is utilized before throttling takes effects. Similarly, if we decrease metric value before
+a task fully completes, the metric value does not accurately capture resource utilization.
+
+Other issues include a throttling configuration exists but is not applied due to missing implementation,
+the limit is on uncompressed data but throttling is applied on compressed data (or vice versa), etc.
+
+\vspace{.05in}
+\noindent
+\textbf{Post handling (4 issues).} These issues are not related to the core logic of throttling, but related
+to how to handle the delayed or rejected tasks. On the one hand, those tasks should not be considered
+failed and should be retried. On the other hand, they should be retried too frequently.
+
