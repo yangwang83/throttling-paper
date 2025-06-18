@@ -45,12 +45,21 @@ insufficient in certain scenarios.
 
 \begin{enumerate}
     \item Is there anything surprising about how these bugs get triggered? e.g. 
-    \\ (a) Are these bugs manifestations of other, possibly unrelated, issues that happened earlier in the execution and cascaded? 
-    \\ (b) Do they involve multiple resources (e.g. memory pressure, high CPU utilisation, queue contention, etc.), or do they require several parts of the application to be "at capacity" at the same time? 
+    \\ (a) Are these bugs manifestations of other, possibly unrelated, issues that 
+    happened earlier in the execution and cascaded? 
+    \\ (b) Do they involve multiple resources (e.g. memory pressure, high CPU utilisation, queue contention, etc.), 
+    or do they require several parts of the application to be "at capacity" at the same time? 
     \\ (c) Do they involve a small or a large number of machines/nodes? 
-    \\ (d) Is the symptom easily observable (e.g. hang, crash), or it requires specialized monitoring (e.g. memory usage, flame graphs), or are there silent manifestations (e.g. metastable failures)?  
-    \item What lessons can developers learn from this data set that can be applied to system design? Beyond individual anecdotes, are there any anti-patterns that developers should avoid?
+    \\ (d) Is the symptom easily observable (e.g. hang, crash), or it requires specialized monitoring 
+    (e.g. memory usage, flame graphs), or are there silent manifestations (e.g. metastable failures)?  
+    \item What lessons can developers learn from this data set that can be applied to system design? Beyond 
+    individual anecdotes, are there any anti-patterns that developers should avoid?
     \item On a similar note, what are some system building lessons we can learn from mistakes -- i.e., the root causes?
-    \item Some (most?) of these bugs have been studied by other works (e.g. performance bugs, latency/skewness, bloating, lock contention, etc.), albeit individually. Are these works lacking in some dimensions? What's distinct about this study?
-    \item On a similar note, a good fraction of the bugs studied happen due to misconfigurations -- this has been thoroughly studied in the past. So, first, how can misconfiguration bug finding tools can help fix some of these bugs? And, second, what is so interesting about the rest of the bugs -- why didn't simple re-provisioning, re-configuration does not help?
+    \item Some (most?) of these bugs have been studied by other works (e.g. performance bugs, latency/skewness, 
+    bloating, lock contention, etc.), albeit individually. Are these works lacking in some dimensions? What's 
+    distinct about this study?
+    \item On a similar note, a good fraction of the bugs studied happen due to misconfigurations -- this has been 
+    thoroughly studied in the past. So, first, how can misconfiguration bug finding tools can help fix some 
+    of these bugs? And, second, what is so interesting about the rest of the bugs -- why didn't simple re-provisioning, 
+    re-configuration does not help?
 \end{enumerate}
