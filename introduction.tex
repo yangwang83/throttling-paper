@@ -44,6 +44,8 @@ insufficient in certain scenarios.
 \subsection{Study questions}
 
 \begin{enumerate}
+    \item \yang{What are the common root causes?}
+    \item \yang{What are the common symptoms?}
     \item Is there anything surprising about how these bugs get triggered? e.g. 
     \\ (a) Are these bugs manifestations of other, possibly unrelated, issues that 
     happened earlier in the execution and cascaded? 
@@ -51,15 +53,22 @@ insufficient in certain scenarios.
     or do they require several parts of the application to be "at capacity" at the same time? 
     \\ (c) Do they involve a small or a large number of machines/nodes? 
     \\ (d) Is the symptom easily observable (e.g. hang, crash), or it requires specialized monitoring 
-    (e.g. memory usage, flame graphs), or are there silent manifestations (e.g. metastable failures)?  
-    \item What lessons can developers learn from this data set that can be applied to system design? Beyond 
+  (e.g. memory usage, flame graphs), or are there silent manifestations (e.g. metastable failures)?  
+    \\ \yang{I would say most require either a large number of concurrent requests or a few abnormally large requests (perhaps not surprising :). Many involve those ``uncommon'' requests, like recovery, connection, etc.}
+    \item What lessons can developers learn from this data set that can be applied to system design? Beyond
     individual anecdotes, are there any anti-patterns that developers should avoid?
     \item On a similar note, what are some system building lessons we can learn from mistakes -- i.e., the root causes?
-    \item Some (most?) of these bugs have been studied by other works (e.g. performance bugs, latency/skewness, 
+    \\ \yang{This one and the previous one look similar to me, so I provide some of my answers together: 1. ALL requests need to be throttled. 2. Every data structure should have a limit. 3. Indirect metric (e.g., use request rate to limit CPU/memory utilization) is risky. 4. Implementation should update metrice BEFORE any resource of a request is consumed and
+AFTER all resource of the request is released.}
+    \item Some (most?) of these bugs have been studied by other works (e.g. performance bugs, latency/skewness,
     bloating, lock contention, etc.), albeit individually. Are these works lacking in some dimensions? What's 
-    distinct about this study?
-    \item On a similar note, a good fraction of the bugs studied happen due to misconfigurations -- this has been 
-    thoroughly studied in the past. So, first, how can misconfiguration bug finding tools can help fix some 
-    of these bugs? And, second, what is so interesting about the rest of the bugs -- why didn't simple re-provisioning, 
+    distinct about this study? \yang{This is a bit vague. I don't know how to answer this question unless I look at a few concrete studies. But I think some of the lessons may be different.}
+    \item On a similar note, a good fraction of the bugs studied happen due to misconfigurations -- this has been
+    thoroughly studied in the past. So, first, how can misconfiguration bug finding tools can help fix some
+    of these bugs? And, second, what is so interesting about the rest of the bugs -- why didn't simple re-provisioning,
     re-configuration does not help?
+   \\ \yang{As far as I know, prior works focus on correctness misconfiguration bugs that fail some explicit checks. Misconfiguration in our work is mostly performance-related. The appropriate setting probably depends on hardware settings. In fact, I think performance-related misconfiguration is a harder but prevalent problem.}
+    \\ \yang{I don't know what you mean by ``re-configuration does not help''. I see people reconfig to fix the bug, but of course after a bug is triggered.}
+    \item \yang{Is it possible to build a general-purpose throttler (e.g., either based on queues or based on resource utilization)? May be colaborate with Meta on this. My own answer: A general-purpose throttler is a good starting point and help to prevent some of the problems, but I don't think it addresses all problems as some application may want to do it in a more fine-grained manner, e.g., recovery should not consume more than 10\% of total bandwidth. General-purpose and application-specific throttlers might be complementary.}
+    \item \yang{Is adaptive throttling necessary? We see a few cases arguing for this, but many cases, including the fixed version, still use fixed threshold. For example, recovery cannot consume more than 10\% of total bandwidth even when there is no other traffic, which seems not ideal.}
 \end{enumerate}
