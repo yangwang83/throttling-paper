@@ -1,13 +1,13 @@
 \section{Introduction}
 
 A server application can get overloaded when it is given more requests that it can handle,
-resuling in server crash or degraded performance. To prevent server overloading, existing 
+resulting in server crash or degraded performance. To prevent server overloading, existing 
 server applications often involve \emph{throttling} mechanisms, which delay or block
 excessive incoming requests based on certain criteria.
 
-While the idea seems straightforward, we observe implementing throttling mechanisms
+While the idea is straightforward, we observe that implementing throttling mechanisms
 properly is non-trivial, and bugs in their implementation can lead to severe consequences.
-In this paper, we study XXX throttling related bugs from Y real-world applications.
+In this paper, we study 106 throttling related bugs from 11 real-world applications.
 
 \vspace{.05in}
 \noindent
@@ -15,32 +15,57 @@ In this paper, we study XXX throttling related bugs from Y real-world applicatio
 
 \begin{itemize}
 
-\item No throttling. XX bugs are caused by the fact that no throttling mechanisms
+\item No throttling. 29 bugs are caused by the fact that no throttling mechanisms
 were incorporated. Since the applications studied are all mature open-source projects,
-they all incorporate throttling mechanisms for common requests, and thus such no-throttling
-bugs mostly occur for uncommon requests, such as recovery, decomission. etc.
+they have all incorporated throttling mechanisms for common requests, but have missed
+certain corner cases. 
 
-\item Big request. XX bugs are caused by this problem, which means a single request can
+\item Big task. 15 bugs are caused by this problem, which means a single task can
 become too big in certain scenarios, causing problems like out of memory. In these cases, throttling mechanisms
 have no chance to resolve the issue. To solve this type of issues, the developer needs to
 break the big request into multiple smaller ones and apply throttling on smaller requests.
 
-\item Incorrect metric. XX bugs fall into this category. It means the throttling mechanism uses
-one metric as the criteria to determine whether to throttle a request, but it should another. A
+\item Incorrect metric. 13 bugs fall into this category. It means the throttling mechanism uses
+one metric as the criteria to determine whether to throttle a request, but it should be another. A
 typical example is using number of requests or size of requests as the metric---both can be 
 insufficient in certain scenarios.
 
-\item Misconfiguration.
+\item Misconfiguration. 9 bugs are caused by the throttling threshold configured too high or too
+low. Both can cause performance degradation.
 
-\item Buggy implementation.
+\item Buggy logic (may further break this category).
+35 bugs are caused by bugs in implementing the throttling logic, including
+wrong formula to compute resource utilization, incorrect place to enforce throttling, etc.
+
+\item Post Handling. 7 bugs are caused by incorrect logic to handle a request that is
+throttled, including retrying too fast and not retrying.
 
 \end{itemize}
 
 \vspace{.05in}
 \noindent
-\textbf{Symptoms.}
+\textbf{Triggering workload.} By the definition of throttling, these bugs are triggered
+by giving a high load to server. We make two observations that may help testing.
+
+First, many of these bugs are triggered by infrequent tasks, such as compaction, recovery,
+decommission, etc. This suggests that testing should take those tasks into consideration
+in addition to common user-facing requests.
+
+Second, while a burst of requests is a major pattern of the workload, another major pattern
+is large requests. Size of large requests matter for at least three reasons. First, the ``big task''
+issue discussed above inherently requires large requests to trigger. Second, large requests
+are helpful to expose problems of throttling implementations that try to limit request rate---such
+implementation is quite common. Finally, some requests, like recovery or decommission, typically
+do not have a high rate, and large requests are the only way to trigger overloading. Therefore,
+we recommend stress testing with both a large number of small requests and a smaller number
+of large requests.
+
+\vspace{.05in}
+\noindent
+\textbf{Triggering scale.} ......
 
 
+\iffalse
 \subsection{Study questions}
 
 \begin{enumerate}
@@ -75,3 +100,4 @@ AFTER all resource of the request is released.}
     \item \yang{Is it possible to build a general-purpose throttler (e.g., either based on queues or based on resource utilization)? May be colaborate with Meta on this. My own answer: A general-purpose throttler is a good starting point and help to prevent some of the problems, but I don't think it addresses all problems as some application may want to do it in a more fine-grained manner, e.g., recovery should not consume more than 10\% of total bandwidth. General-purpose and application-specific throttlers might be complementary.}
     \item \yang{Is adaptive throttling necessary? We see a few cases arguing for this, but many cases, including the fixed version, still use fixed threshold. For example, recovery cannot consume more than 10\% of total bandwidth even when there is no other traffic, which seems not ideal.}
 \end{enumerate}
+\fi
