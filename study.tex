@@ -80,7 +80,8 @@ read data with an iterator, reading a portion of data at a time. A long task req
 periodically release the lock, allowing other tasks to enter.
 
 \noindent
-\textbf{Lesson: Every task should have a limit.}
+\textbf{Lesson: Every task should have a limit. \bogdan{I would expand here to make it more
+explicit: ``limit shared queue sizes, cap message buffer lengths, manage pooled resources''.}
 
 \subsubsection{Incorrect metric (13 issues).} These issues are caused by using incorrect metrics during
 throttling. This category is often caused by using an easy-to-compute metric to approximate
@@ -100,7 +101,8 @@ won't work and thus propose adaptive method to change the threshold values or at
 provide mechanisms to allow a user to change the value at run time.
 
 \noindent
-\textbf{Lesson: ?}
+\textbf{Lesson: These issues indicate that static thresholds are sometimes brittle, and 
+software engineers should consider adaptive, runtime-tunable limits with appropriate default values.}
 
 \subsubsection{Buggy logic (35 issues).} This category catches other bugs in the throttling logic.
 There are a few common subcategories. First, some issues are caused by incorrect formula
@@ -128,7 +130,8 @@ to how to handle the delayed or rejected tasks. On the one hand, those tasks sho
 failed and should be retried. On the other hand, they should not be retried too frequently.
 
 \noindent
-\textbf{Lesson: ?}
+\textbf{Lesson 2: Treat throttling as a recoverable condition. Use retry logic with safeguards in place, 
+like limits on the number of iterations and back-off between them to avoid common retry bugs.}
 
 \subsubsection{Possible ways ahead.} While the lessons discussed above may help, it is always helpful
 if certain tools can either help us detect those bugs or prevent those bugs from manifesting. Due to the
