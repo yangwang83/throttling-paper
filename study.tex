@@ -80,8 +80,9 @@ read data with an iterator, reading a portion of data at a time. A long task req
 periodically release the lock, allowing other tasks to enter.
 
 \noindent
-\textbf{Lesson: Every task should have a limit. \bogdan{I would expand here to make it more
-explicit: ``limit shared queue sizes, cap message buffer lengths, manage pooled resources''.}
+\textbf{Lesson: Every task should have a limit.}
+% \bogdan{I would expand here to make it more
+%explicit: ``limit shared queue sizes, cap message buffer lengths, manage pooled resources''.}
 
 \subsubsection{Incorrect metric (13 issues).} These issues are caused by using incorrect metrics during
 throttling. This category is often caused by using an easy-to-compute metric to approximate
