@@ -1,0 +1,15 @@
+## Throttling design and implementation at Meta
+
+The initial design was focused on rate-limiting where each process was set a limit on the number of requests that it can send or receive.However this was not enough, because limits such as QPS are a poor proxy to measure resource utilization. Also, some metrics can be measured more efficiently external to the application/service.
+
+In the next iteration, the design changed to a two-tier throttling system where the initial rate-limiting with an external throttling library that controls access to core resources -- CPU, memory, network bandwidth (anything else?) -- by setting quotas for each process it monitors.
+
+Questoins/observations:
+
+* We need a good example to show how the initial rate-limiting design was insufficient and where it fails. Ideally, the example whould also highlight why the two-tier throttling works
+
+* We need to draw two diagrams to show how rate-limiting initially worked, and how the two-tier rate + quota throttling works now. It's still unclear to me what resources are monitored and how (probably using probes at the OS level?). Also, it's unclear what entities are monitored and set quotas for (you mentioned each service/process runs inside it's own container and the quota is actually per-thread or did I misunderstand?)
+
+* Ideally, we can show a breakdown of each major or critical issue based on ``missing throttling'' vs. ``mis-matched limit'' (e.g., where something like QPS was insufficient or poor proxy measurement for resource utilization).
+
+## Company-internal bug report data set
