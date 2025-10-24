@@ -17,16 +17,30 @@ Questoins/observations:
 
 ## Company-internal bug report data set
 
-1. Top-5 root causes closed-source
+1. Major root causes closed-source
 
 * No throttling is one of the largest root causes: developers don't use guidances or API, so they need some external library to plug into their service/applications
 
 * "Big request" is different: sometimes a request creates a flury of jobs; any others? (for example: query that triggers a scan to the entire DB that happens due to migration or update like adding a new column; the solution often is to split into smaller requests by the user)
 
-* Buggy code (not related to throttling) caused the request to do more work (cascding bug); rate limit doesn't work in this cases because it needs to be constantly updated based on the workload and needs to be constatly updated, also requests are heterogenous and devs cannot use one limit to satisfy all types (first question)
+* Misconfiguration are more prevalent, because QPS or rate limit based throttling is not always a good throttling strategy (see answer to the first question)
 
-* There are very little "misconfiguration" and "mismatched metric" bugs
+* Retry aggresively during throttling is more frequent in closed-source (what we call post-handling in open-source)
 
-2. Top 5 triggers for closed-source
+* No isolation -- multiple tenents, some tenants can be nosy and affect another tenent; usually devs set QPS on the entire service, but later change it on a "per tenant" limit; if a tenant is buggy and all of the sudden generates 10x the traffic, a whole-service QPS will prevent other tenants to operate because the ``noisy'' tenant will hog up resources. To solve it, they build "priority-based scheduling" which is a separate component in their throttling library. This doesn't appear in open-source (except maybe Cassandra)
+
+* There are very little "mismatched metric" bugs
+
+2. Major triggers for closed-source
 
 Note: This is something not explained or documented in open-source bug reports 
+
+* PRIMARY REASON: Buggy code (not related to throttling) caused the request to do more work (cascding bug); rate limit doesn't work in this cases because it needs to be constantly updated based on the workload and needs to be constatly updated, also requests are heterogenous and devs cannot use one limit to satisfy all types (first question); buggy code can cause more requests or current requests to be heavier
+
+* Datacenter fialure which causes a rise of traffic in other datacenters
+
+* Big requests, like migratoin or upgrades
+
+* Under-provising (not enough machines/resourcs) which causes crashes instead of rejecting incoming traffic; these could have cascading effect. This is a very specific under-provisioning case, because if under-provisioning doesn't cause any issues but simply triggers throttling and the solution is adding more machines/resources, then that's not a throttling bug.
+
+* Bursty user traffic is another trigger, but not too many throttling bugs are trigger this way 
