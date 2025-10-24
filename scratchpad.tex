@@ -7,22 +7,26 @@ In the next iteration, the design changed to a two-tier throttling system where 
 Questoins/observations:
 
 * We need a good example to show how the initial rate-limiting design was insufficient and where it fails. Ideally, the example whould also highlight why the two-tier throttling works
+[answer: rate limit doesn't work in this cases because it needs to be constantly updated based on the workload and needs to be constatly updated, also requests are heterogenous and devs cannot use one limit to satisfy all types]
 
 * We need to draw two diagrams to show how rate-limiting initially worked, and how the two-tier rate + quota throttling works now. It's still unclear to me what resources are monitored and how (probably using probes at the OS level?). Also, it's unclear what entities are monitored and set quotas for (you mentioned each service/process runs inside it's own container and the quota is actually per-thread or did I misunderstand?)
+[answer (second part): they monitor fundamental machine resources: CPU utilization, memory utilization, and network bandwidth utiliation at the OS level.]
 
 * Ideally, we can show a breakdown of each major or critical issue based on ``missing throttling'' vs. ``mis-matched limit'' (e.g., where something like QPS was insufficient or poor proxy measurement for resource utilization).
 
+
 ## Company-internal bug report data set
 
-
-Top-5 root causes closed-source
+1. Top-5 root causes closed-source
 
 * No throttling is one of the largest root causes: developers don't use guidances or API, so they need some external library to plug into their service/applications
 
-* "Big request" is different: sometimes a request creates a flury of jobs; any others?
+* "Big request" is different: sometimes a request creates a flury of jobs; any others? (for example: query that triggers a scan to the entire DB that happens due to migration or update like adding a new column; the solution often is to split into smaller requests by the user)
+
+* Buggy code (not related to throttling) caused the request to do more work (cascding bug); rate limit doesn't work in this cases because it needs to be constantly updated based on the workload and needs to be constatly updated, also requests are heterogenous and devs cannot use one limit to satisfy all types (first question)
 
 * There are very little "misconfiguration" and "mismatched metric" bugs
 
-Top 5 triggers for closed-source
+2. Top 5 triggers for closed-source
 
 Note: This is something not explained or documented in open-source bug reports 
